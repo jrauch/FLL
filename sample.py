@@ -103,14 +103,13 @@ def go_until_black(val):
 
 # this function will transition between a bunch of colors on the sensor before stopping motion
 trigger_color = ["black", "white", "black"]
-index = 0
 def go_on_transitions(val):
     global trigger_color, index
     color = color_sensor1.get_color()
-    if color == trigger_color[index]:
+    if color == val[index]:
         print("trigger ")
         index += 1
-        if index == len(trigger_color):
+        if index == len(val):
             return False
     return True
 
@@ -121,12 +120,15 @@ black_reflected = 20 # calibrated in jeremy's office 1/4
 white_reflected = 99 # calibrated in jeremy's office 1/4
 
 align_to_line("white", color_sensor1, color_sensor2)
-move_forward(1) # move forward a little since there's a lot going on at that line that can confuse the sensors
+move_forward(2) # move forward a little since there's a lot going on at that line that can confuse the sensors
 
-follow_line_pid_until(go_until_black, 2, line_sensor = color_sensor2) # follow the line until you see black on the sensor 2x
+#follow_line_pid_until(go_until_black, 2, line_sensor = color_sensor2) # follow the line until you see black on the sensor 2x
+index=0
+follow_line_pid_until(go_on_transitions, ["green","white", "black"], line_sensor = color_sensor2) # follow the line until you see a transition from green to white to black to white to black again on the sensor
 
 move_forward(2) # scoot the robot forward a little so we get the correct (left) sensor for line following
 turn_right(90)
-follow_line_pid_until(go_on_transitions, 3, line_sensor = color_sensor2) # follow the line until you see a transition from black to white to black again on the sensor
-turn_right(90)
 
+index=0
+follow_line_pid_until(go_on_transitions, ["black", "white", "black"], line_sensor = color_sensor2) # follow the line until you see a transition from black to white to black again on the sensor
+turn_right(90)
