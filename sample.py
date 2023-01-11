@@ -3,8 +3,17 @@ from spike.control import wait_for_seconds, wait_until, Timer
 from spike.operator import equal_to
 from math import *
 
+##############################################################
+# Initialization                                            #
+##############################################################
 
-
+hub = PrimeHub()
+color_sensor1 = ColorSensor('E')
+color_sensor2 = ColorSensor('F')
+counter = 0
+motorleft = Motor('D') # left motor
+motorright = Motor('C')# right motor
+motor_pair = MotorPair('D', 'C') # used for tank moves
 
 
 ##############################################################
@@ -23,7 +32,7 @@ def align_to_line(color, sensor1, sensor2):
             motor_pair.stop()
             turn_left(1)
         else:
-            motor_pair.start(0) 
+            motor_pair.start(0)
 
 
     print("done")
@@ -32,7 +41,7 @@ def align_to_line(color, sensor1, sensor2):
 
 
 ##############################################################
-# Complex move functions                                     #
+# Complex move functions                                    #
 ##############################################################
 
 # PID tuneable line following function that takes function to evaluate "done" as variable fun
@@ -77,7 +86,7 @@ def move_forward_pid_until(fun, value=False, color_sensor=color_sensor1):
     Kp = 0.3
     Ki = 0.001
     Kd = 1.0
-
+    motorleft.set_degrees_counted(0)
     I = 0
     previous_error = 0
     base_power = 40
@@ -101,7 +110,7 @@ def move_forward_pid_until(fun, value=False, color_sensor=color_sensor1):
 
 
 ##############################################################
-# Turning functions                                          #
+# Turning functions                                        #
 ##############################################################
 
 def turn_left(angle):
@@ -143,7 +152,7 @@ color_sensor2 = ColorSensor('F') # left sensor
 
 
 ##############################################################
-# Utility functions                                          #
+# Utility functions                                        #
 ##############################################################
 def degrees_to_distance(degrees):
     one_degree = 6.9/360
@@ -162,7 +171,7 @@ index = 0
 # tracks transitions, as passed in as an array of color names to "val"
 # for simplicity reasons you MUST reset the global "index" variable to 0
 # before using this function
-def go_on_transitions(val, color_sensor=color_sensor1): 
+def go_on_transitions(val, color_sensor=color_sensor1):
     global index
     color = color_sensor.get_color()
     if color == val[index]:
@@ -179,30 +188,24 @@ def go_distance(val, val2):
 
 ##############################################################
 # Challenge specific code goes below!                        #
-##############################################################    
+##############################################################
 
-hub = PrimeHub()
-color_sensor1 = ColorSensor('E')
-color_sensor2 = ColorSensor('F')
-counter = 0
-motorleft = Motor('D') # left motor
-motorright = Motor('C')  # right motor
-motor_pair = MotorPair('D', 'C') # used for tank moves
+
 
 # set some defaults
-motor_pair.set_default_speed(15) # going too fast results in more errors. 
+motor_pair.set_default_speed(15) # going too fast results in more errors.
 black_reflected = 20 # calibrated in jeremy's office 1/4
 white_reflected = 99 # calibrated in jeremy's office 1/4
 
 # for this challenge, start in the left start area, line up to the red line by looking for both sensors to
 # NOT be white
 # start with the left sensor _roughly_ aligned to the left side of the line we're going to follow
-align_to_line("white", color_sensor1, color_sensor2)
+#align_to_line("white", color_sensor1, color_sensor2)
 move_forward(2) # move forward a little since there's a lot going on at that line that can confuse the sensors
 
 # at this point, start following the line until you reach the end of the straight part on the left.
-# we'll see the color sensor transition from seeing green, to white and then black when it hits the 
-# horizontal black line.  Stop then.
+# we'll see the color sensor transition from seeing green, to white and then black when it hits the
+# horizontal black line.Stop then.
 index=0
 follow_line_pid_until(go_on_transitions, ["green","white", "black"], line_sensor = color_sensor2) # follow the line until you see a transition from green to white to black to white to black again on the sensor
 
@@ -220,7 +223,37 @@ index=0
 follow_line_pid_until(go_on_transitions, ["black", "white", "black"], line_sensor = color_sensor2) # follow the line until you see a transition from black to white to black again on the sensor
 
 
-# it likes to drift at the end of the line before the line following conditional trips.  Re-square to zero
+# it likes to drift at the end of the line before the line following conditional trips.Re-square to zero
 turn_to_square()
 
 
+# move forward using the gyro sensor pid function until we go from yellow to black.
+index=0
+move_forward_pid_until(go_on_transitions, ["yellow", "black"], color_sensor2)
+
+turn_left(45) # lined up with wind vane pusher
+
+# follow the short line until the "end" - might be better to use distance instead?
+index=0
+motorleft.set_degrees_counted(0) # lets set up to use the line follow with a distance measure function
+
+# follow the line for a fixed distance (4 inches)
+follow_line_pid_until(go_distance, 4, color_sensor1, color_sensor2, True)
+
+
+move_forward(3.7)
+move_backwards(2.5)
+
+move_forward(3.7)
+move_backwards(2.5)
+
+move_forward(3.7)
+move_backwards(2.5)
+
+turn_right(135)
+motorleft.set_degrees_counted(0)
+move_forward_pid_until(go_distance, 14, color_sensor2)
+turn_left(90)
+move_forward_pid_until(go_distance, 7.75, color_sensor2)
+turn_left(90)
+move_forward_pid_until(go_distance, 5.5, color_sensor2)
