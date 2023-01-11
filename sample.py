@@ -224,25 +224,3 @@ follow_line_pid_until(go_on_transitions, ["black", "white", "black"], line_senso
 turn_to_square()
 
 
-# move forward using the gyro sensor pid function until we go from yellow to black.
-index=0
-move_forward_pid_until(go_on_transitions, ["yellow", "black"], color_sensor2)
-
-turn_left(45) # lined up with wind vane pusher
-
-# follow the short line until the "end" - might be better to use distance instead?
-index=0
-motorleft.set_degrees_counted(0) # lets set up to use the line follow with a distance measure function
-
-# follow the line for a fixed distance (4 inches)
-follow_line_pid_until(go_distance, 4, color_sensor1, color_sensor2, True)
-
-
-move_forward(3.5)
-move_backwards(2.5)
-
-move_forward(3.5)
-move_backwards(2.5)
-
-move_forward(3.5)
-move_backwards(2.5)
